@@ -110,7 +110,7 @@ def fetch_article_text(article_url: str) -> str:
 def main(argv: list[str]) -> int:
     """Run the command-line interface."""
     if len(argv) != 2:
-        print(f"Usage: python {argv[0]} <wikipedia-url>", file=sys.stderr)
+        print("Usage: python -m scripts.wikipedia <wikipedia-url>", file=sys.stderr)
         return 1
 
     try:

@@ -16,10 +16,7 @@ from llama_index.llms.google_genai import GoogleGenAI
 from pinecone import Pinecone
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
-
-from scripts.insert_wikipedia_page import (  # noqa: E402
+from ..insert_wikipedia_page import (
     METADATA_TEXT_FIELD,
     TEXT_FIELD_NAME,
     split_paragraphs,
