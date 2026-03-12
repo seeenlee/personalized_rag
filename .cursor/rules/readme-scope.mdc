@@ -1,0 +1,18 @@
+---
+description: Limit README changes to first-time setup guidance
+alwaysApply: true
+---
+
+# README Change Scope
+
+- Do not change the root `README.md` unless the edit helps someone set up the repository for the first time.
+- Prefer leaving `README.md` unchanged for refactors, implementation details, or project-internal notes that do not affect initial setup.
+- Valid README updates include prerequisites, environment variables, installation steps, initialization steps, and first-run instructions.
+- If a README change is requested but does not improve first-time setup, avoid editing it and explain why.
+
+Example:
+
+```markdown
+// Good: add a missing `.env` setup step needed before the app can run.
+// Bad: update README wording to describe an internal script refactor that does not affect setup.
+```
