@@ -19,6 +19,7 @@ Install dependencies:
 ```
 pip install -r requirements.txt
 ```
+Define `PINECONE_API_KEY` in `.env`
 
 Update `requirements.txt`
 
