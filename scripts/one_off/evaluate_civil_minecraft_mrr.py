@@ -138,6 +138,145 @@ BENCHMARK_CASES = [
         expected_chunk_id="minecraft-3",
         expected_section="Section 3: Swapping blocks/updates",
     ),
+    # Topic: Material Creep vs. Mob Creep
+    BenchmarkCase(
+        user_label="Civil Engineer",
+        question="How to account for long-term creep in a structure?",
+        expected_chunk_id="civil-9",
+        expected_section="Section 9: Material Creep & Deformation",
+    ),
+    BenchmarkCase(
+        user_label="Minecraft Player",
+        question="How to account for long-term creep in a structure?",
+        expected_chunk_id="minecraft-9",
+        expected_section="Section 9: Creeper Blast Resistance & Obsidian",
+    ),
+
+    # Topic: Hydraulic Pistons
+    BenchmarkCase(
+        user_label="Civil Engineer",
+        question="Best way to move heavy loads vertically using pistons?",
+        expected_chunk_id="civil-6",
+        expected_section="Section 6: Hydraulic Jacking & Superstructures",
+    ),
+    BenchmarkCase(
+        user_label="Minecraft Player",
+        question="Best way to move heavy loads vertically using pistons?",
+        expected_chunk_id="minecraft-6",
+        expected_section="Section 6: Pistons & Sticky Pistons",
+    ),
+
+    # Topic: Trapdoors & Pathfinding
+    BenchmarkCase(
+        user_label="Civil Engineer",
+        question="How to use trapdoors to control movement?",
+        expected_chunk_id="civil-8",
+        expected_section="Section 8: Egress & Access Hatches",
+    ),
+    BenchmarkCase(
+        user_label="Minecraft Player",
+        question="How to use trapdoors to control movement?",
+        expected_chunk_id="minecraft-8",
+        expected_section="Section 8: Mob Pathfinding & AI trickery",
+    ),
+
+    # Topic: Bookshelves & Load/Power
+    BenchmarkCase(
+        user_label="Civil Engineer",
+        question="Safety standards for library bookshelves?",
+        expected_chunk_id="civil-14",
+        expected_section="Section 14: Live Loads & Seismic Bracing",
+    ),
+    BenchmarkCase(
+        user_label="Minecraft Player",
+        question="Safety standards for library bookshelves?",
+        expected_chunk_id="minecraft-14",
+        expected_section="Section 14: Enchantment Spacing & Air Gaps",
+    ),
+
+    # Topic: Tunnel/Nether Portals
+    BenchmarkCase(
+        user_label="Civil Engineer",
+        question="How to stabilize a portal entrance?",
+        expected_chunk_id="civil-12",
+        expected_section="Section 12: Headwalls & Wingwalls",
+    ),
+    BenchmarkCase(
+        user_label="Minecraft Player",
+        question="How to stabilize a portal entrance?",
+        expected_chunk_id="minecraft-12",
+        expected_section="Section 12: Obsidian frames & Coordinate Math",
+    ),
+
+    # Topic: Aesthetic Lighting
+    BenchmarkCase(
+        user_label="Civil Engineer",
+        question="How to hide light sources for better aesthetics?",
+        expected_chunk_id="civil-13",
+        expected_section="Section 13: Cove Lighting & Foot-candles",
+    ),
+    BenchmarkCase(
+        user_label="Minecraft Player",
+        question="How to hide light sources for better aesthetics?",
+        expected_chunk_id="minecraft-13",
+        expected_section="Section 13: Carpets & Block Light",
+    ),
+
+    # Topic: Water Management
+    BenchmarkCase(
+        user_label="Civil Engineer",
+        question="How to manage water displacement in a foundation?",
+        expected_chunk_id="civil-7",
+        expected_section="Section 7: French drains & Sump pumps",
+    ),
+    BenchmarkCase(
+        user_label="Minecraft Player",
+        question="How to manage water displacement in a foundation?",
+        expected_chunk_id="minecraft-7",
+        expected_section="Section 7: Source blocks & Sponges",
+    ),
+
+    # Topic: Automated Delivery/Rail
+    BenchmarkCase(
+        user_label="Civil Engineer",
+        question="How to automate item delivery?",
+        expected_chunk_id="civil-10",
+        expected_section="Section 10: Heavy Rail & Grade Management",
+    ),
+    BenchmarkCase(
+        user_label="Minecraft Player",
+        question="How to automate item delivery?",
+        expected_chunk_id="minecraft-10",
+        expected_section="Section 10: Minecarts, Chests, & Hoppers",
+    ),
+
+    # Topic: Urban/Efficient Farming
+    BenchmarkCase(
+        user_label="Civil Engineer",
+        question="Improving growth in a rooftop or urban garden?",
+        expected_chunk_id="civil-11",
+        expected_section="Section 11: Soil Remediation & Load Analysis",
+    ),
+    BenchmarkCase(
+        user_label="Minecraft Player",
+        question="Improving growth in a rooftop or urban garden?",
+        expected_chunk_id="minecraft-11",
+        expected_section="Section 11: Bone Meal & Hydration Squares",
+    ),
+
+    # Topic: Lava/Thermal Hazards
+    BenchmarkCase(
+        user_label="Civil Engineer",
+        question="Safely managing thermal hazards and molten materials?",
+        expected_chunk_id="civil-6",
+        expected_section="Section 6: Thermal Hazards & PPE",
+    ),
+    BenchmarkCase(
+        user_label="Minecraft Player",
+        question="Safely managing thermal hazards and molten materials?",
+        expected_chunk_id="minecraft-6",
+        expected_section="Section 6: Water buckets & Fire Resistance",
+    ),
 ]
 
 
