@@ -345,18 +345,19 @@ def prompt_required(prompt: str) -> str:
 
 
 def print_result(chunks: list[RetrievedChunk]) -> None:
-    """Print the top retrieved chunk."""
+    """Print all retrieved chunks in their current ranking order."""
     if not chunks:
         print("\nNo chunks retrieved.")
         return
 
-    top_chunk = chunks[0]
-    print("\nTop retrieved chunk")
-    print(f"ID: {top_chunk.chunk_id}")
-    if top_chunk.score is not None:
-        print(f"Score: {top_chunk.score:.6f}")
-    print("\nChunk:")
-    print(top_chunk.text or "[No text returned]")
+    print(f"\nRetrieved chunks ({len(chunks)} results)")
+    for rank, chunk in enumerate(chunks, start=1):
+        print(f"\nRank {rank}")
+        print(f"ID: {chunk.chunk_id}")
+        if chunk.score is not None:
+            print(f"Score: {chunk.score:.6f}")
+        print("Chunk:")
+        print(chunk.text or "[No text returned]")
 
 
 def run_pipeline(args: argparse.Namespace) -> None:
