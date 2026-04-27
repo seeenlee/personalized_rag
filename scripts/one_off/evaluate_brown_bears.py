@@ -16,7 +16,7 @@ from llama_index.llms.google_genai import GoogleGenAI
 from pinecone import Pinecone
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-from ..insert_wikipedia_page import (
+from ..insert_text_file import (
     METADATA_TEXT_FIELD,
     TEXT_FIELD_NAME,
     split_paragraphs,

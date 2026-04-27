@@ -3,3 +3,4 @@ python-dotenv
 llama-index
 llama-index-llms-google-genai
 ragas
+pymupdf4llm

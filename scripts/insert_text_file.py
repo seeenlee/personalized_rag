@@ -1,4 +1,4 @@
-"""Insert paragraph records from a saved Wikipedia text file into Pinecone."""
+"""Insert paragraph records from a plain-text file into Pinecone."""
 
 import argparse
 import os
@@ -31,26 +31,25 @@ def load_api_key() -> str:
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
-    """Parse command line arguments for Wikipedia paragraph insertion."""
+    """Parse command line arguments for plain-text paragraph insertion."""
     parser = argparse.ArgumentParser(
         description=(
-            "Insert paragraph records from a Wikipedia text file into a Pinecone index."
+            "Insert paragraph records from a plain-text file into a Pinecone index."
         )
     )
     parser.add_argument("index_name", help="Name of the Pinecone index to insert into")
     parser.add_argument("namespace", help="Namespace in the Pinecone index to insert into")
     parser.add_argument(
         "txt_file_path",
-        help="Path to a .txt file under data/wikipedia",
+        help="Path to the .txt file to insert",
     )
     return parser.parse_args(argv)
 
 
-def resolve_wikipedia_path(raw_path: str) -> Path:
-    """Resolve and validate that the input file lives under data/wikipedia."""
+def resolve_text_file_path(raw_path: str) -> Path:
+    """Resolve and validate that the input path points to an existing .txt file."""
     repo_root = Path(__file__).resolve().parents[1]
-    wikipedia_dir = (repo_root / "data" / "wikipedia").resolve()
-    candidate = Path(raw_path)
+    candidate = Path(raw_path).expanduser()
     candidate = candidate if candidate.is_absolute() else repo_root / candidate
 
     try:
@@ -58,15 +57,11 @@ def resolve_wikipedia_path(raw_path: str) -> Path:
     except FileNotFoundError as exc:
         raise RuntimeError(f"File not found: {candidate}") from exc
 
+    if not resolved_path.is_file():
+        raise RuntimeError(f"Input path is not a file: {resolved_path}")
+
     if resolved_path.suffix.lower() != ".txt":
         raise RuntimeError("Input file must be a .txt file.")
-
-    try:
-        resolved_path.relative_to(wikipedia_dir)
-    except ValueError as exc:
-        raise RuntimeError(
-            f"Input file must live under {wikipedia_dir}."
-        ) from exc
 
     return resolved_path
 
@@ -136,7 +131,7 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         api_key = load_api_key()
-        file_path = resolve_wikipedia_path(args.txt_file_path)
+        file_path = resolve_text_file_path(args.txt_file_path)
         inserted_count = insert_paragraphs(
             api_key, args.index_name, args.namespace, file_path
         )
