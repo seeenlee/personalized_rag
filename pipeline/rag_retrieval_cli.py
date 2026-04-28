@@ -191,12 +191,12 @@ def fetch_user_vector(index: Any, namespace: str, username: str) -> np.ndarray |
     return _extract_vector_from_record(record)
 
 
-def embed_query(pc: Any, model: str, query: str) -> np.ndarray:
-    """Embed a query with Pinecone Inference."""
+def embed_text(pc: Any, model: str, text: str, input_type: str) -> np.ndarray:
+    """Embed text with Pinecone Inference using the specified input_type."""
     response = pc.inference.embed(
         model=model,
-        inputs=[query],
-        parameters={"input_type": "query", "truncate": "END"},
+        inputs=[text],
+        parameters={"input_type": input_type, "truncate": "END"},
     )
 
     for container_key in ("data", "embeddings", "results"):
@@ -204,18 +204,23 @@ def embed_query(pc: Any, model: str, query: str) -> np.ndarray:
         for record in records:
             vector = _extract_vector_from_record(record)
             if vector is not None:
-                return vector
+                return np.asarray(vector, dtype=float)
 
     for record in _as_sequence(response):
         vector = _extract_vector_from_record(record)
         if vector is not None:
-            return vector
+            return np.asarray(vector, dtype=float)
 
     vector = _extract_vector_from_record(response)
     if vector is not None:
-        return vector
+        return np.asarray(vector, dtype=float)
 
     raise RuntimeError("Unable to extract query embedding from Pinecone response.")
+
+
+def embed_query(pc: Any, model: str, query: str) -> np.ndarray:
+    """Embed a query with Pinecone Inference."""
+    return embed_text(pc=pc, model=model, text=query, input_type="query")
 
 def linear_combination(
     user_vector: np.ndarray, query_vector: np.ndarray, alpha: float
@@ -481,11 +486,27 @@ def run_pipeline(args: argparse.Namespace) -> None:
     query_vector = embed_query(pc, args.embed_model, query)
     user_vector = fetch_user_vector(index, args.user_namespace, username)
     if user_vector is None:
-        user_vector = np.zeros_like(query_vector)
-        print(
-            f"No user vector found for '{username}' in namespace "
-            f"'{args.user_namespace}'. Using a zero vector."
-        )
+        description = input(
+            "New user detected. Describe yourself (optional, press Enter to skip): "
+        ).strip()
+        if description:
+            user_vector = embed_text(
+                pc=pc,
+                model=args.embed_model,
+                text=description,
+                input_type="passage",
+            )
+            print(
+                f"No user vector found for '{username}' in namespace "
+                f"'{args.user_namespace}'. Using embedded description as the base "
+                "user vector."
+            )
+        else:
+            user_vector = np.zeros_like(query_vector)
+            print(
+                f"No user vector found for '{username}' in namespace "
+                f"'{args.user_namespace}'. Using a zero vector."
+            )
 
     combined_vector = combine_vectors(
         user_vector=user_vector,
