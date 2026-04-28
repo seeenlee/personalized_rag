@@ -6,3 +6,4 @@ ragas
 pymupdf4llm
 sentence-transformers
 torch
+numpy

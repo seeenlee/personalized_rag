@@ -8,6 +8,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+
 import numpy as np
 from sentence_transformers import CrossEncoder
 
@@ -130,19 +131,23 @@ def _as_sequence(value: Any) -> list[Any]:
     return []
 
 
-def _coerce_float_vector(value: Any) -> list[float] | None:
-    """Convert a sequence of numeric values into floats."""
-    values = _as_sequence(value)
-    if not values:
+def _coerce_float_vector(value: Any) -> np.ndarray | None:
+    """Convert a sequence of numeric values into a NumPy vector."""
+    if value is None or isinstance(value, (str, bytes)):
         return None
 
     try:
-        return [float(item) for item in values]
+        vector = np.asarray(value, dtype=float)
     except (TypeError, ValueError):
         return None
 
+    if vector.ndim != 1 or vector.size == 0:
+        return None
 
-def _extract_vector_from_record(record: Any) -> list[float] | None:
+    return vector
+
+
+def _extract_vector_from_record(record: Any) -> np.ndarray | None:
     """Extract vector values from common Pinecone record shapes."""
     candidates = [
         _safe_get(record, "values"),
@@ -163,7 +168,7 @@ def _extract_vector_from_record(record: Any) -> list[float] | None:
     return None
 
 
-def fetch_user_vector(index: Any, namespace: str, username: str) -> list[float] | None:
+def fetch_user_vector(index: Any, namespace: str, username: str) -> np.ndarray | None:
     """Fetch a user vector by username from Pinecone."""
     result = index.fetch(ids=[username], namespace=namespace)
     vectors = _safe_get(result, "vectors")
@@ -186,7 +191,7 @@ def fetch_user_vector(index: Any, namespace: str, username: str) -> list[float] 
     return _extract_vector_from_record(record)
 
 
-def embed_query(pc: Any, model: str, query: str) -> list[float]:
+def embed_query(pc: Any, model: str, query: str) -> np.ndarray:
     """Embed a query with Pinecone Inference."""
     response = pc.inference.embed(
         model=model,
@@ -212,7 +217,9 @@ def embed_query(pc: Any, model: str, query: str) -> list[float]:
 
     raise RuntimeError("Unable to extract query embedding from Pinecone response.")
 
-def linear_combination(user_vector, query_vector, alpha):
+def linear_combination(
+    user_vector: np.ndarray, query_vector: np.ndarray, alpha: float
+) -> np.ndarray:
     """
     Performs a weighted linear combination (Lerp) of two vectors.
     alpha = 0.0 returns v_user (User Vector)
@@ -221,11 +228,11 @@ def linear_combination(user_vector, query_vector, alpha):
     # 1. Perform the weighted addition
     # Formula: (1 - alpha) * v_user + alpha * v_query
     v_fused = ((1 - alpha) * user_vector) + (alpha * query_vector)
-    
+
     # 2. Re-normalize to a unit vector (Length = 1)
     # This is essential for Cosine Similarity search!
     norm = np.linalg.norm(v_fused)
-    
+
     if norm > 0:
         return v_fused / norm
     else:
@@ -233,37 +240,37 @@ def linear_combination(user_vector, query_vector, alpha):
         return query_vector
 
 
-def spherical_combination(v0, v1, alpha):
+def spherical_combination(v0: np.ndarray, v1: np.ndarray, alpha: float) -> np.ndarray:
     """
     Spherical linear interpolation between two normalized vectors.
     alpha = 0.0 returns v0 (User Vector)
     alpha = 1.0 returns v1 (Query Vector)
     """
     # Ensure inputs are unit vectors
-    v0 = v0 / np.linalg.norm(v0)
-    v1 = v1 / np.linalg.norm(v1)
-    
+    v0 = v0 / np.linalg.norm(v0) if np.linalg.norm(v0) > 0 else v0
+    v1 = v1 / np.linalg.norm(v1) if np.linalg.norm(v1) > 0 else v1
+
     # Compute the cosine of the angle between the vectors
     dot = np.sum(v0 * v1)
-    
+
     # Clip to avoid errors from floating point precision
     dot = np.clip(dot, -1.0, 1.0)
-    
+
     # Calculate the angle theta
     theta_0 = np.arccos(dot)
     theta = theta_0 * alpha
-    
+
     # Compute the orthogonal vector v2
     v2 = v1 - v0 * dot
-    v2 = v2 / (np.linalg.norm(v2) + 1e-10) # Avoid division by zero
-    
+    v2 = v2 / (np.linalg.norm(v2) + 1e-10)
+
     # Calculate the final interpolated vector
     return v0 * np.cos(theta) + v2 * np.sin(theta)
 
 
 def combine_vectors(
-    user_vector: list[float], query_vector: list[float], strategy: str
-) -> list[float]:
+    user_vector: np.ndarray, query_vector: np.ndarray, strategy: str
+) -> np.ndarray:
     """Combine user and query vectors with the selected strategy."""
     if strategy == "query-only":
         return query_vector
@@ -278,13 +285,18 @@ def combine_vectors(
     )
 
 
+def _to_pinecone_vector(vector: np.ndarray) -> list[float]:
+    """Convert an internal NumPy vector into Pinecone's dense vector format."""
+    return vector.astype(float, copy=False).tolist()
+
+
 def search_chunks(
-    index: Any, namespace: str, combined_vector: list[float], top_k: int
+    index: Any, namespace: str, combined_vector: np.ndarray, top_k: int
 ) -> Any:
     """Search Pinecone chunks by dense vector."""
     return index.query(
         namespace=namespace,
-        vector=combined_vector,
+        vector=_to_pinecone_vector(combined_vector),
         top_k=top_k,
         include_metadata=True,
         include_values=False,
@@ -409,14 +421,22 @@ def update_user_vector(
     index: Any,
     username: str,
     user_namespace: str,
-    user_vector: list[float],
-    query_vector: list[float],
+    user_vector: np.ndarray,
+    query_vector: np.ndarray,
     strategy: str,
 ) -> None:
     """Update the user vector with the selected strategy."""
-    _ = (index, username, user_namespace, user_vector, query_vector)
+    _ = query_vector
+
 
     if strategy == "none":
+        return
+    if strategy == "moving-average":
+        updated_vector = linear_combination(user_vector, query_vector, alpha=0.1)
+        index.upsert(
+            vectors=[{"id": username, "values": _to_pinecone_vector(updated_vector)}],
+            namespace=user_namespace,
+        )
         return
 
     raise NotImplementedError(
@@ -461,7 +481,7 @@ def run_pipeline(args: argparse.Namespace) -> None:
     query_vector = embed_query(pc, args.embed_model, query)
     user_vector = fetch_user_vector(index, args.user_namespace, username)
     if user_vector is None:
-        user_vector = [0.0] * len(query_vector)
+        user_vector = np.zeros_like(query_vector)
         print(
             f"No user vector found for '{username}' in namespace "
             f"'{args.user_namespace}'. Using a zero vector."
