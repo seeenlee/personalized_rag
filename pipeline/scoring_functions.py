@@ -7,7 +7,7 @@ def persona_rank_score(
     expected_chunk: str,
     retrieved_chunks: list[str],
 ) -> float:
-    ground_truth_score = 5
+    ground_truth_score = 10
     user_chunk_alignment_score = 1
 
     total_score = 0
@@ -19,7 +19,7 @@ def persona_rank_score(
         chunk_category = retrieved_chunk.split("-")[0]
         if chunk_category == user_type:
             total_score += user_chunk_alignment_score / math.log(i + 1)
-        else:
-            total_score -= user_chunk_alignment_score / math.log(i + 1)
+        # else:
+        #     total_score -= user_chunk_alignment_score / math.log(i + 1)
 
     return total_score
