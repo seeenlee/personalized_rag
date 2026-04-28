@@ -21,6 +21,7 @@ from ..insert_text_file import (
 PINECONE_ENV_VAR_NAME = "PINECONE_API_KEY"
 DEFAULT_CIVIL_PATH = REPO_ROOT / "data" / "civil" / "civil.txt"
 DEFAULT_MINECRAFT_PATH = REPO_ROOT / "data" / "civil" / "minecraft.txt"
+DEFAULT_NOISE_PATH = REPO_ROOT / "data" / "civil" / "noise.txt"
 DEFAULT_TOP_K = 5
 
 

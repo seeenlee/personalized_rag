@@ -8,6 +8,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+import numpy as np
 
 PINECONE_ENV_VAR_NAME = "PINECONE_API_KEY"
 DEFAULT_INDEX_NAME = "541"
@@ -18,7 +19,7 @@ DEFAULT_TOP_K = 5
 TEXT_FIELD_NAME = "chunk_text"
 METADATA_TEXT_FIELD = "text"
 
-COMBINE_STRATEGIES = ("query-only", "weighted-sum", "average")
+COMBINE_STRATEGIES = ("query-only", "linear-comb", "spherical-comb", "average")
 RERANK_STRATEGIES = ("none", "cross-encoder", "llm")
 UPDATE_STRATEGIES = ("none", "moving-average", "replace")
 
@@ -209,6 +210,54 @@ def embed_query(pc: Any, model: str, query: str) -> list[float]:
 
     raise RuntimeError("Unable to extract query embedding from Pinecone response.")
 
+def linear_combination(user_vector, query_vector, alpha):
+    """
+    Performs a weighted linear combination (Lerp) of two vectors.
+    alpha = 0.0 returns v_user (User Vector)
+    alpha = 1.0 returns v_query (Query Vector)
+    """
+    # 1. Perform the weighted addition
+    # Formula: (1 - alpha) * v_user + alpha * v_query
+    v_fused = ((1 - alpha) * user_vector) + (alpha * query_vector)
+    
+    # 2. Re-normalize to a unit vector (Length = 1)
+    # This is essential for Cosine Similarity search!
+    norm = np.linalg.norm(v_fused)
+    
+    if norm > 0:
+        return v_fused / norm
+    else:
+        # Fallback in case of zero-vector (unlikely with embeddings)
+        return query_vector
+
+
+def spherical_combination(v0, v1, alpha):
+    """
+    Spherical linear interpolation between two normalized vectors.
+    alpha = 0.0 returns v0 (User Vector)
+    alpha = 1.0 returns v1 (Query Vector)
+    """
+    # Ensure inputs are unit vectors
+    v0 = v0 / np.linalg.norm(v0)
+    v1 = v1 / np.linalg.norm(v1)
+    
+    # Compute the cosine of the angle between the vectors
+    dot = np.sum(v0 * v1)
+    
+    # Clip to avoid errors from floating point precision
+    dot = np.clip(dot, -1.0, 1.0)
+    
+    # Calculate the angle theta
+    theta_0 = np.arccos(dot)
+    theta = theta_0 * alpha
+    
+    # Compute the orthogonal vector v2
+    v2 = v1 - v0 * dot
+    v2 = v2 / (np.linalg.norm(v2) + 1e-10) # Avoid division by zero
+    
+    # Calculate the final interpolated vector
+    return v0 * np.cos(theta) + v2 * np.sin(theta)
+
 
 def combine_vectors(
     user_vector: list[float], query_vector: list[float], strategy: str
@@ -216,6 +265,11 @@ def combine_vectors(
     """Combine user and query vectors with the selected strategy."""
     if strategy == "query-only":
         return query_vector
+    elif strategy == "linear-comb":
+        return linear_combination(user_vector, query_vector, alpha=0.8)
+    elif strategy == "spherical-comb":
+        return spherical_combination(user_vector, query_vector, alpha=0.5)
+
 
     raise NotImplementedError(
         f"Combination strategy '{strategy}' is not implemented yet."
