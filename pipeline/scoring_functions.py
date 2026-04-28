@@ -1,0 +1,25 @@
+from __future__ import annotations
+import math
+
+
+def persona_rank_score(
+    user_type: str,
+    expected_chunk: str,
+    retrieved_chunks: list[str],
+) -> float:
+    ground_truth_score = 5
+    user_chunk_alignment_score = 1
+
+    total_score = 0
+    for i, retrieved_chunk in enumerate(retrieved_chunks):
+        if retrieved_chunk == expected_chunk:
+            total_score += ground_truth_score / math.log(i + 1)
+            continue
+
+        chunk_category = retrieved_chunk.split("-")[0]
+        if chunk_category == user_type:
+            total_score += user_chunk_alignment_score / math.log(i + 1)
+        else:
+            total_score -= user_chunk_alignment_score / math.log(i + 1)
+
+    return total_score
