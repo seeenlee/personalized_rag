@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 import numpy as np
+from sentence_transformers import CrossEncoder
 
 PINECONE_ENV_VAR_NAME = "PINECONE_API_KEY"
 DEFAULT_INDEX_NAME = "541"
@@ -16,6 +17,7 @@ DEFAULT_RETRIEVAL_NAMESPACE = "civil"
 DEFAULT_USER_NAMESPACE = "users"
 DEFAULT_EMBED_MODEL = "llama-text-embed-v2"
 DEFAULT_TOP_K = 5
+DEFAULT_CROSS_ENCODER_MODEL = "cross-encoder/ms-marco-MiniLM-L-6-v2"
 TEXT_FIELD_NAME = "chunk_text"
 METADATA_TEXT_FIELD = "text"
 
@@ -362,10 +364,43 @@ def normalize_hits(raw_hits: list[Any]) -> list[RetrievedChunk]:
     return normalized
 
 
-def rerank_chunks(chunks: list[RetrievedChunk], strategy: str) -> list[RetrievedChunk]:
+def rerank_chunks(
+    chunks: list[RetrievedChunk], query: str, strategy: str
+) -> list[RetrievedChunk]:
     """Rerank chunks with the selected strategy."""
     if strategy == "none":
         return chunks
+
+    if strategy == "cross-encoder":
+        if not query.strip():
+            return chunks
+
+        pairs: list[tuple[str, str]] = [
+            (query, chunk.text) for chunk in chunks if chunk.text
+        ]
+        if not pairs:
+            return chunks
+
+        model = CrossEncoder(DEFAULT_CROSS_ENCODER_MODEL)
+        scores = model.predict(pairs)
+
+        reranked: list[RetrievedChunk] = []
+        score_idx = 0
+        for chunk in chunks:
+            if chunk.text:
+                score = float(scores[score_idx])
+                score_idx += 1
+                reranked.append(
+                    RetrievedChunk(chunk_id=chunk.chunk_id, text=chunk.text, score=score)
+                )
+            else:
+                reranked.append(chunk)
+
+        return sorted(
+            reranked,
+            key=lambda item: float("-inf") if item.score is None else item.score,
+            reverse=True,
+        )
 
     raise NotImplementedError(f"Rerank strategy '{strategy}' is not implemented yet.")
 
@@ -444,7 +479,11 @@ def run_pipeline(args: argparse.Namespace) -> None:
         top_k=args.top_k,
     )
     chunks = normalize_hits(extract_hits(search_result))
-    reranked_chunks = rerank_chunks(chunks, args.rerank_strategy)
+    reranked_chunks = rerank_chunks(
+        chunks=chunks,
+        query=query,
+        strategy=args.rerank_strategy,
+    )
     update_user_vector(
         index=index,
         username=username,
