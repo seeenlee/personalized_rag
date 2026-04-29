@@ -40,6 +40,10 @@ DEFAULT_CIVIL_QUESTIONS_PATH = REPO_ROOT / "data" / "zai" / "questions" / "civil
 DEFAULT_MINECRAFT_QUESTIONS_PATH = (
     REPO_ROOT / "data" / "zai" / "questions" / "minecraft.txt"
 )
+DEFAULT_CIVIL_ANSWERS_PATH = REPO_ROOT / "data" / "zai" / "answers" / "civil.txt"
+DEFAULT_MINECRAFT_ANSWERS_PATH = (
+    REPO_ROOT / "data" / "zai" / "answers" / "minecraft.txt"
+)
 DEFAULT_OUTPUT_CSV_PATH = REPO_ROOT / "data" / "zai" / "evaluation_results.csv"
 
 COMBINE_STRATEGIES = ("query-only", "linear-comb", "spherical-comb")
@@ -71,10 +75,12 @@ class EvaluationResult:
     expected_chunk_id: str
     priming_question_count: int
     baseline: RetrievalRun
-    post_priming: RetrievalRun
+    post_priming: RetrievalRun | None
 
     @property
-    def delta(self) -> float:
+    def delta(self) -> float | None:
+        if self.post_priming is None:
+            return None
         return self.post_priming.score - self.baseline.score
 
 
@@ -128,6 +134,16 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         help="Path to Minecraft persona priming questions",
     )
     parser.add_argument(
+        "--civil-answers-path",
+        default=str(DEFAULT_CIVIL_ANSWERS_PATH),
+        help="Path to expected civil chunk numbers for neutral questions",
+    )
+    parser.add_argument(
+        "--minecraft-answers-path",
+        default=str(DEFAULT_MINECRAFT_ANSWERS_PATH),
+        help="Path to expected Minecraft chunk numbers for neutral questions",
+    )
+    parser.add_argument(
         "--output-csv",
         default=str(DEFAULT_OUTPUT_CSV_PATH),
         help="Path where per-case CSV results should be written",
@@ -150,6 +166,27 @@ def load_questions(path: Path) -> list[str]:
         raise RuntimeError(f"No questions found in {resolved_path}")
 
     return questions
+
+
+def load_expected_chunk_ids(path: Path, persona: str, expected_count: int) -> list[str]:
+    """Load answer numbers and convert them to persona chunk IDs."""
+    answers = load_questions(path)
+    if len(answers) != expected_count:
+        raise RuntimeError(
+            f"Expected {expected_count} answers for {persona}, found {len(answers)} "
+            f"in {path.expanduser().resolve()}"
+        )
+
+    chunk_ids: list[str] = []
+    for line_number, answer in enumerate(answers, start=1):
+        if not answer.isdigit():
+            raise RuntimeError(
+                f"Answer line {line_number} for {persona} must be a chunk number: "
+                f"{answer!r}"
+            )
+        chunk_ids.append(f"{persona}-{int(answer)}")
+
+    return chunk_ids
 
 
 def reset_user_vector(index: Any, user_namespace: str, username: str) -> None:
@@ -244,11 +281,12 @@ def evaluate_case(
     persona: str,
     question_number: int,
     neutral_question: str,
+    expected_chunk_id: str,
     priming_questions: list[str],
+    baseline_only: bool,
 ) -> EvaluationResult:
     """Evaluate one neutral question before and after persona priming."""
     username = f"eval-{persona}-q{question_number:02d}-{combine_strategy}"
-    expected_chunk_id = f"{persona}-{question_number}"
     reset_user_vector(index, user_namespace, username)
 
     baseline_chunk_ids = retrieve_chunks(
@@ -269,6 +307,21 @@ def evaluate_case(
         expected_chunk_id=expected_chunk_id,
         chunk_ids=baseline_chunk_ids,
     )
+
+    if baseline_only:
+        return EvaluationResult(
+            combine_strategy=combine_strategy,
+            rerank_strategy=RERANK_STRATEGY,
+            update_strategy=UPDATE_STRATEGY,
+            persona=persona,
+            question_number=question_number,
+            username=username,
+            neutral_question=neutral_question,
+            expected_chunk_id=expected_chunk_id,
+            priming_question_count=0,
+            baseline=baseline,
+            post_priming=None,
+        )
 
     for priming_question in priming_questions:
         retrieve_chunks(
@@ -326,6 +379,14 @@ def evaluate_grid(args: argparse.Namespace) -> list[EvaluationResult]:
         "civil": load_questions(Path(args.civil_questions_path)),
         "minecraft": load_questions(Path(args.minecraft_questions_path)),
     }
+    expected_chunk_ids = {
+        "civil": load_expected_chunk_ids(
+            Path(args.civil_answers_path), "civil", len(neutral_questions)
+        ),
+        "minecraft": load_expected_chunk_ids(
+            Path(args.minecraft_answers_path), "minecraft", len(neutral_questions)
+        ),
+    }
 
     api_key = load_api_key()
     pc, index = connect_to_index(api_key, args.index_name)
@@ -345,7 +406,11 @@ def evaluate_grid(args: argparse.Namespace) -> list[EvaluationResult]:
                     persona=persona,
                     question_number=question_number,
                     neutral_question=neutral_question,
+                    expected_chunk_id=expected_chunk_ids[persona][
+                        question_number - 1
+                    ],
                     priming_questions=persona_questions[persona],
+                    baseline_only=combine_strategy == "query-only",
                 )
                 results.append(result)
                 print_case_progress(result)
@@ -358,14 +423,24 @@ def rank_display(rank: int | None) -> str:
     return str(rank) if rank is not None else "not retrieved"
 
 
+def score_display(run: RetrievalRun | None) -> str:
+    """Format an optional retrieval score for reports."""
+    return f"{run.score:.4f}" if run is not None else "n/a"
+
+
+def delta_display(delta: float | None) -> str:
+    """Format an optional delta for reports."""
+    return f"{delta:+.4f}" if delta is not None else "n/a"
+
+
 def print_case_progress(result: EvaluationResult) -> None:
     """Print a compact row as each case completes."""
     print(
         f"{result.combine_strategy:14} {result.persona:9} "
         f"q{result.question_number:02d} "
         f"baseline={result.baseline.score:.4f} "
-        f"post={result.post_priming.score:.4f} "
-        f"delta={result.delta:+.4f}"
+        f"post={score_display(result.post_priming)} "
+        f"delta={delta_display(result.delta)}"
     )
 
 
@@ -410,17 +485,27 @@ def write_csv(results: list[EvaluationResult], output_path: Path) -> None:
                     "neutral_question": result.neutral_question,
                     "priming_question_count": result.priming_question_count,
                     "baseline_score": f"{result.baseline.score:.6f}",
-                    "post_priming_score": f"{result.post_priming.score:.6f}",
-                    "delta": f"{result.delta:.6f}",
+                    "post_priming_score": (
+                        f"{result.post_priming.score:.6f}"
+                        if result.post_priming is not None
+                        else ""
+                    ),
+                    "delta": (
+                        f"{result.delta:.6f}" if result.delta is not None else ""
+                    ),
                     "baseline_expected_rank": rank_display(
                         result.baseline.expected_rank
                     ),
-                    "post_priming_expected_rank": rank_display(
-                        result.post_priming.expected_rank
+                    "post_priming_expected_rank": (
+                        rank_display(result.post_priming.expected_rank)
+                        if result.post_priming is not None
+                        else ""
                     ),
                     "baseline_chunk_ids": "|".join(result.baseline.chunk_ids),
-                    "post_priming_chunk_ids": "|".join(
-                        result.post_priming.chunk_ids
+                    "post_priming_chunk_ids": (
+                        "|".join(result.post_priming.chunk_ids)
+                        if result.post_priming is not None
+                        else ""
                     ),
                 }
             )
@@ -443,19 +528,25 @@ def print_report(results: list[EvaluationResult], output_csv: Path) -> None:
 
     summaries = []
     for (combine_strategy, persona), group in grouped_results.items():
+        post_group = [result for result in group if result.post_priming is not None]
         baseline_mean = mean([result.baseline.score for result in group])
-        post_mean = mean([result.post_priming.score for result in group])
-        delta_mean = mean([result.delta for result in group])
-        wins = sum(1 for result in group if result.delta > 0)
+        post_mean = mean([result.post_priming.score for result in post_group])
+        deltas = [result.delta for result in post_group if result.delta is not None]
+        delta_mean = mean(deltas) if deltas else None
+        wins = sum(
+            1 for result in post_group if result.delta is not None and result.delta > 0
+        )
         summaries.append(
             (
-                delta_mean,
+                delta_mean if delta_mean is not None else float("-inf"),
                 combine_strategy,
                 persona,
                 baseline_mean,
-                post_mean,
+                post_mean if post_group else None,
+                delta_mean,
                 wins,
                 len(group),
+                len(post_group),
             )
         )
 
@@ -463,20 +554,24 @@ def print_report(results: list[EvaluationResult], output_csv: Path) -> None:
     print("ZAI Persona Strategy Leaderboard")
     print("================================")
     for (
-        delta_mean,
+        _sort_delta,
         combine_strategy,
         persona,
         baseline_mean,
         post_mean,
+        delta_mean,
         wins,
         case_count,
+        post_case_count,
     ) in sorted(summaries, reverse=True):
+        post_mean_display = f"{post_mean:.4f}" if post_mean is not None else "n/a"
         print(
             f"{combine_strategy:14} {persona:9} "
             f"baseline_mean={baseline_mean:.4f} "
-            f"post_mean={post_mean:.4f} "
-            f"mean_delta={delta_mean:+.4f} "
-            f"wins={wins}/{case_count}"
+            f"post_mean={post_mean_display} "
+            f"mean_delta={delta_display(delta_mean)} "
+            f"wins={wins}/{post_case_count} "
+            f"cases={case_count}"
         )
 
     print()
@@ -488,10 +583,10 @@ def print_report(results: list[EvaluationResult], output_csv: Path) -> None:
             f"q{result.question_number:02d} "
             f"expected={result.expected_chunk_id:12} "
             f"rank={rank_display(result.baseline.expected_rank)}"
-            f"->{rank_display(result.post_priming.expected_rank)} "
+            f"->{rank_display(result.post_priming.expected_rank) if result.post_priming is not None else 'n/a'} "
             f"score={result.baseline.score:.4f}"
-            f"->{result.post_priming.score:.4f} "
-            f"delta={result.delta:+.4f}"
+            f"->{score_display(result.post_priming)} "
+            f"delta={delta_display(result.delta)}"
         )
 
     print()

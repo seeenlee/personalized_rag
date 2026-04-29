@@ -1,4 +1,4 @@
-According to the text, what happens to automated Redstone systems if they are not positioned within the "always loaded" spawn chunk radius
+What happens to automated Redstone systems if they are not positioned within the "always loaded" spawn chunk radius
 Which two blocks offer the highest immunity to explosion damage, and what are their respective resistance values
 What "non-solid" supports can be used to trick the game engine into thinking a space is occupied, thereby bypassing physics checks for gravity-affected blocks like Sand and Gravel
 What is Quasi-Connectivity (QC), and why is it considered essential for compacting logic gates in mega-structures
