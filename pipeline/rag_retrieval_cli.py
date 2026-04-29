@@ -6,6 +6,7 @@ import os
 import sys
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -381,6 +382,12 @@ def normalize_hits(raw_hits: list[Any]) -> list[RetrievedChunk]:
     return normalized
 
 
+@lru_cache(maxsize=1)
+def load_cross_encoder(model_name: str) -> CrossEncoder:
+    """Load the reranker once so batch evaluations do not reload it per query."""
+    return CrossEncoder(model_name)
+
+
 def rerank_chunks(
     chunks: list[RetrievedChunk], query: str, strategy: str
 ) -> list[RetrievedChunk]:
@@ -398,7 +405,7 @@ def rerank_chunks(
         if not pairs:
             return chunks
 
-        model = CrossEncoder(DEFAULT_CROSS_ENCODER_MODEL)
+        model = load_cross_encoder(DEFAULT_CROSS_ENCODER_MODEL)
         scores = model.predict(pairs)
 
         reranked: list[RetrievedChunk] = []

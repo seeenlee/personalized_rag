@@ -1,0 +1,19 @@
+What role does the foundation or "loading" system play in ensuring a massive structure remains stable and functional
+
+How do builders ensure that a structure can withstand extreme external forces or "blast" impacts
+
+Which materials are prioritized when high strength and durability are required for a build
+
+How is internal stress or "tension" managed to prevent a structure from cracking or failing
+
+What techniques are used to protect a structure from long-term environmental degradation, such as corrosion or "weathering"
+
+How do designers account for movement, such as thermal expansion or "block updates," within a system
+
+What kind of rigorous analysis or "testing" is required to validate the integrity of a complex design
+
+How is the distribution of weight or "load" managed across large spans or monolithic walls
+
+What strategies are used to maximize the performance and efficiency of a structure while minimizing "latency" or weight
+
+How does the verticality or "height" of a project change the mechanics of how it is built

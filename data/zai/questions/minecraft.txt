@@ -1,0 +1,10 @@
+According to the text, what happens to automated Redstone systems if they are not positioned within the "always loaded" spawn chunk radius
+Which two blocks offer the highest immunity to explosion damage, and what are their respective resistance values
+What "non-solid" supports can be used to trick the game engine into thinking a space is occupied, thereby bypassing physics checks for gravity-affected blocks like Sand and Gravel
+What is Quasi-Connectivity (QC), and why is it considered essential for compacting logic gates in mega-structures
+Why are hopper minecarts considered superior to stationary hoppers in large-scale Redstone contraptions
+What detailing technique relies on the game’s lighting engine to generate contrast between different planes to break the "Minecraft grid" visual effect
+How thick must roofing be to completely block the "skylight" value and allow a builder total control over the ambient lighting curve
+What is the functional difference between Slime Blocks and Honey Blocks when used in the construction of flying machines
+What is the coordinate scaling ratio between the Nether and the Overworld that is exploited for transportation hubs within mega-structures
+What is the purpose of "terrain blending" when integrating a mega-structure with the surrounding environment
