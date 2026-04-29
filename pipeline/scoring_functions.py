@@ -12,7 +12,7 @@ def persona_rank_score(
 
     total_score = 0.0
     for rank, retrieved_chunk in enumerate(retrieved_chunks, start=1):
-        rank_discount = math.log(rank + 1)
+        rank_discount = math.log(rank + 1, 2)
         if retrieved_chunk == expected_chunk:
             total_score += ground_truth_score / rank_discount
             continue
