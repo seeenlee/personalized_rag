@@ -443,10 +443,16 @@ def update_user_vector(
 
     if strategy == "none":
         return
-    if strategy == "moving-average":
+    elif strategy == "moving-average":
         updated_vector = linear_combination(user_vector, query_vector, alpha=0.1)
         index.upsert(
             vectors=[{"id": username, "values": _to_pinecone_vector(updated_vector)}],
+            namespace=user_namespace,
+        )
+        return
+    elif strategy == "replace":
+        index.upsert(
+            vectors=[{"id": username, "values": _to_pinecone_vector(query_vector)}],
             namespace=user_namespace,
         )
         return
