@@ -45,11 +45,29 @@ DEFAULT_MINECRAFT_ANSWERS_PATH = (
     REPO_ROOT / "data" / "zai" / "answers" / "minecraft.txt"
 )
 DEFAULT_OUTPUT_CSV_PATH = REPO_ROOT / "data" / "zai" / "evaluation_results.csv"
+DEFAULT_SPORTS_NAMESPACE = "sports"
+DEFAULT_SPORTS_BOTH_QUESTIONS_PATH = (
+    REPO_ROOT / "data" / "sports" / "questions" / "all.txt"
+)
+DEFAULT_BASKETBALL_QUESTIONS_PATH = (
+    REPO_ROOT / "data" / "sports" / "questions" / "basketball_specific_queries.txt"
+)
+DEFAULT_FOOTBALL_QUESTIONS_PATH = (
+    REPO_ROOT / "data" / "sports" / "questions" / "football_specific_queries.txt"
+)
+DEFAULT_HOCKEY_QUESTIONS_PATH = (
+    REPO_ROOT / "data" / "sports" / "questions" / "hockey_specific_queries.txt"
+)
+DEFAULT_SOCCER_QUESTIONS_PATH = (
+    REPO_ROOT / "data" / "sports" / "questions" / "soccer_specific_queries.txt"
+)
+DEFAULT_SPORTS_OUTPUT_CSV_PATH = REPO_ROOT / "data" / "sports" / "evaluation_results.csv"
 
 COMBINE_STRATEGIES = ("query-only", "linear-comb", "spherical-comb")
 RERANK_STRATEGY = "cross-encoder"
 UPDATE_STRATEGY = "moving-average"
 PERSONAS = ("civil", "minecraft")
+SPORTS_PERSONAS = ("basketball", "football", "hockey", "soccer")
 
 
 @dataclass(frozen=True)
@@ -93,14 +111,20 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         )
     )
     parser.add_argument(
+        "--topic",
+        choices=("zai", "sports"),
+        default="zai",
+        help="Dataset topic to evaluate",
+    )
+    parser.add_argument(
         "--index-name",
         default=DEFAULT_INDEX_NAME,
         help="Name of the Pinecone index to query",
     )
     parser.add_argument(
         "--namespace",
-        default=DEFAULT_NAMESPACE,
-        help="Pinecone namespace containing the ZAI civil and Minecraft chunks",
+        default=None,
+        help="Pinecone namespace containing the topic chunks (defaults by topic)",
     )
     parser.add_argument(
         "--user-namespace",
@@ -145,8 +169,28 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     )
     parser.add_argument(
         "--output-csv",
-        default=str(DEFAULT_OUTPUT_CSV_PATH),
-        help="Path where per-case CSV results should be written",
+        default=None,
+        help="Path where per-case CSV results should be written (defaults by topic)",
+    )
+    parser.add_argument(
+        "--basketball-questions-path",
+        default=str(DEFAULT_BASKETBALL_QUESTIONS_PATH),
+        help="Path to basketball persona priming questions",
+    )
+    parser.add_argument(
+        "--football-questions-path",
+        default=str(DEFAULT_FOOTBALL_QUESTIONS_PATH),
+        help="Path to football persona priming questions",
+    )
+    parser.add_argument(
+        "--hockey-questions-path",
+        default=str(DEFAULT_HOCKEY_QUESTIONS_PATH),
+        help="Path to hockey persona priming questions",
+    )
+    parser.add_argument(
+        "--soccer-questions-path",
+        default=str(DEFAULT_SOCCER_QUESTIONS_PATH),
+        help="Path to soccer persona priming questions",
     )
     return parser.parse_args(argv)
 
@@ -187,6 +231,11 @@ def load_expected_chunk_ids(path: Path, persona: str, expected_count: int) -> li
         chunk_ids.append(f"{persona}-{int(answer)}")
 
     return chunk_ids
+
+
+def sequential_expected_chunk_ids(persona: str, expected_count: int) -> list[str]:
+    """Create expected chunk IDs as <persona>-1..N."""
+    return [f"{persona}-{idx}" for idx in range(1, expected_count + 1)]
 
 
 def reset_user_vector(index: Any, user_namespace: str, username: str) -> None:
@@ -374,19 +423,34 @@ def evaluate_case(
 
 def evaluate_grid(args: argparse.Namespace) -> list[EvaluationResult]:
     """Run the full strategy/persona/question evaluation grid."""
-    neutral_questions = load_questions(Path(args.both_questions_path))
-    persona_questions = {
-        "civil": load_questions(Path(args.civil_questions_path)),
-        "minecraft": load_questions(Path(args.minecraft_questions_path)),
-    }
-    expected_chunk_ids = {
-        "civil": load_expected_chunk_ids(
-            Path(args.civil_answers_path), "civil", len(neutral_questions)
-        ),
-        "minecraft": load_expected_chunk_ids(
-            Path(args.minecraft_answers_path), "minecraft", len(neutral_questions)
-        ),
-    }
+    if args.topic == "sports":
+        neutral_questions = load_questions(Path(DEFAULT_SPORTS_BOTH_QUESTIONS_PATH))
+        persona_questions = {
+            "basketball": load_questions(Path(args.basketball_questions_path)),
+            "football": load_questions(Path(args.football_questions_path)),
+            "hockey": load_questions(Path(args.hockey_questions_path)),
+            "soccer": load_questions(Path(args.soccer_questions_path)),
+        }
+        expected_chunk_ids = {
+            persona: sequential_expected_chunk_ids(persona, len(neutral_questions))
+            for persona in SPORTS_PERSONAS
+        }
+        personas = SPORTS_PERSONAS
+    else:
+        neutral_questions = load_questions(Path(args.both_questions_path))
+        persona_questions = {
+            "civil": load_questions(Path(args.civil_questions_path)),
+            "minecraft": load_questions(Path(args.minecraft_questions_path)),
+        }
+        expected_chunk_ids = {
+            "civil": load_expected_chunk_ids(
+                Path(args.civil_answers_path), "civil", len(neutral_questions)
+            ),
+            "minecraft": load_expected_chunk_ids(
+                Path(args.minecraft_answers_path), "minecraft", len(neutral_questions)
+            ),
+        }
+        personas = PERSONAS
 
     api_key = load_api_key()
     pc, index = connect_to_index(api_key, args.index_name)
@@ -394,7 +458,7 @@ def evaluate_grid(args: argparse.Namespace) -> list[EvaluationResult]:
 
     for combine_strategy in COMBINE_STRATEGIES:
         for question_number, neutral_question in enumerate(neutral_questions, start=1):
-            for persona in PERSONAS:
+            for persona in personas:
                 result = evaluate_case(
                     pc=pc,
                     index=index,
@@ -596,6 +660,17 @@ def print_report(results: list[EvaluationResult], output_csv: Path) -> None:
 def main(argv: list[str] | None = None) -> int:
     """Run the ZAI persona grid evaluation."""
     args = parse_args(sys.argv[1:] if argv is None else argv)
+    if args.topic == "sports":
+        if args.namespace is None:
+            args.namespace = DEFAULT_SPORTS_NAMESPACE
+        if args.output_csv is None:
+            args.output_csv = str(DEFAULT_SPORTS_OUTPUT_CSV_PATH)
+        args.both_questions_path = str(DEFAULT_SPORTS_BOTH_QUESTIONS_PATH)
+    else:
+        if args.namespace is None:
+            args.namespace = DEFAULT_NAMESPACE
+        if args.output_csv is None:
+            args.output_csv = str(DEFAULT_OUTPUT_CSV_PATH)
 
     try:
         results = evaluate_grid(args)
