@@ -20,6 +20,8 @@ DEFAULT_USER_NAMESPACE = "users"
 DEFAULT_EMBED_MODEL = "llama-text-embed-v2"
 DEFAULT_TOP_K = 5
 DEFAULT_CROSS_ENCODER_MODEL = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+DEFAULT_LINEAR_COMB_ALPHA = 0.8
+DEFAULT_SPHERICAL_COMB_ALPHA = 0.5
 TEXT_FIELD_NAME = "chunk_text"
 METADATA_TEXT_FIELD = "text"
 
@@ -55,6 +57,16 @@ def load_api_key() -> str:
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
     """Parse command-line arguments."""
+    def alpha_value(raw: str) -> float:
+        """Parse an alpha value in [0, 1]."""
+        try:
+            value = float(raw)
+        except ValueError as exc:
+            raise argparse.ArgumentTypeError("alpha must be a float") from exc
+        if not (0.0 <= value <= 1.0):
+            raise argparse.ArgumentTypeError("alpha must be between 0 and 1 (inclusive)")
+        return value
+
     parser = argparse.ArgumentParser(
         description="Run an interactive RAG retrieval pipeline against Pinecone."
     )
@@ -89,6 +101,16 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         choices=COMBINE_STRATEGIES,
         default="query-only",
         help="Strategy for combining user and query vectors",
+    )
+    parser.add_argument(
+        "--combine-alpha",
+        type=alpha_value,
+        default=None,
+        help=(
+            "Alpha used by vector combination strategies (0 = user-only, 1 = query-only). "
+            f"If omitted, defaults to {DEFAULT_LINEAR_COMB_ALPHA} for linear-comb and "
+            f"{DEFAULT_SPHERICAL_COMB_ALPHA} for spherical-comb."
+        ),
     )
     parser.add_argument(
         "--rerank-strategy",
@@ -275,15 +297,27 @@ def spherical_combination(v0: np.ndarray, v1: np.ndarray, alpha: float) -> np.nd
 
 
 def combine_vectors(
-    user_vector: np.ndarray, query_vector: np.ndarray, strategy: str
+    user_vector: np.ndarray,
+    query_vector: np.ndarray,
+    strategy: str,
+    *,
+    alpha: float | None = None,
 ) -> np.ndarray:
     """Combine user and query vectors with the selected strategy."""
     if strategy == "query-only":
         return query_vector
     elif strategy == "linear-comb":
-        return linear_combination(user_vector, query_vector, alpha=0.8)
+        return linear_combination(
+            user_vector,
+            query_vector,
+            alpha=DEFAULT_LINEAR_COMB_ALPHA if alpha is None else alpha,
+        )
     elif strategy == "spherical-comb":
-        return spherical_combination(user_vector, query_vector, alpha=0.5)
+        return spherical_combination(
+            user_vector,
+            query_vector,
+            alpha=DEFAULT_SPHERICAL_COMB_ALPHA if alpha is None else alpha,
+        )
 
 
     raise NotImplementedError(
@@ -525,6 +559,7 @@ def run_pipeline(args: argparse.Namespace) -> None:
         user_vector=user_vector,
         query_vector=query_vector,
         strategy=args.combine_strategy,
+        alpha=args.combine_alpha,
     )
     search_result = search_chunks(
         index=index,
