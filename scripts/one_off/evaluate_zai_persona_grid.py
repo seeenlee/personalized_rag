@@ -440,6 +440,7 @@ def evaluate_case(
         update_strategy="none",
     )
     baseline = score_retrieval(
+        persona=persona,
         score_user_type=score_user_type,
         expected_chunk_id=expected_chunk_id,
         chunk_ids=baseline_chunk_ids,
@@ -489,6 +490,7 @@ def evaluate_case(
         update_strategy="none",
     )
     post_priming = score_retrieval(
+        persona=persona,
         score_user_type=score_user_type,
         expected_chunk_id=expected_chunk_id,
         chunk_ids=post_chunk_ids,
@@ -512,7 +514,7 @@ def evaluate_case(
 def evaluate_grid(args: argparse.Namespace) -> list[EvaluationResult]:
     """Run the full strategy/persona/question evaluation grid."""
     if args.topic == "sports":
-        neutral_questions = load_questions(Path(DEFAULT_SPORTS_BOTH_QUESTIONS_PATH))
+        neutral_questions = load_questions(Path(args.both_questions_path))
         persona_questions = {
             "basketball": load_questions(Path(args.basketball_questions_path)),
             "football": load_questions(Path(args.football_questions_path)),
@@ -546,6 +548,9 @@ def evaluate_grid(args: argparse.Namespace) -> list[EvaluationResult]:
             ),
         }
         personas = SPORTS_PERSONAS
+        score_user_types = {
+            persona: SPORTS_CHUNK_ID_PREFIXES[persona] for persona in SPORTS_PERSONAS
+        }
     elif args.topic == "science":
         neutral_questions = load_questions(Path(args.both_questions_path))
         persona_questions = {
@@ -565,9 +570,7 @@ def evaluate_grid(args: argparse.Namespace) -> list[EvaluationResult]:
             ),
         }
         personas = SCIENCE_PERSONAS
-        score_user_types = {
-            persona: SPORTS_CHUNK_ID_PREFIXES[persona] for persona in SPORTS_PERSONAS
-        }
+        score_user_types = {persona: persona for persona in SCIENCE_PERSONAS}
     else:
         neutral_questions = load_questions(Path(args.both_questions_path))
         persona_questions = {
