@@ -62,12 +62,28 @@ DEFAULT_SOCCER_QUESTIONS_PATH = (
     REPO_ROOT / "data" / "sports" / "questions" / "soccer_specific_queries.txt"
 )
 DEFAULT_SPORTS_OUTPUT_CSV_PATH = REPO_ROOT / "data" / "sports" / "evaluation_results.csv"
+DEFAULT_SCIENCE_NAMESPACE = "science"
+DEFAULT_SCIENCE_BOTH_QUESTIONS_PATH = (
+    REPO_ROOT / "data" / "science" / "questions" / "both.txt"
+)
+DEFAULT_BIOLOGY_QUESTIONS_PATH = REPO_ROOT / "data" / "science" / "questions" / "biology.txt"
+DEFAULT_CHEMISTRY_QUESTIONS_PATH = (
+    REPO_ROOT / "data" / "science" / "questions" / "chemistry.txt"
+)
+DEFAULT_PHYSICS_QUESTIONS_PATH = REPO_ROOT / "data" / "science" / "questions" / "physics.txt"
+DEFAULT_BIOLOGY_ANSWERS_PATH = REPO_ROOT / "data" / "science" / "answers" / "biology.txt"
+DEFAULT_CHEMISTRY_ANSWERS_PATH = REPO_ROOT / "data" / "science" / "answers" / "chemistry.txt"
+DEFAULT_PHYSICS_ANSWERS_PATH = REPO_ROOT / "data" / "science" / "answers" / "physics.txt"
+DEFAULT_SCIENCE_OUTPUT_CSV_PATH = (
+    REPO_ROOT / "data" / "science" / "evaluation_results.csv"
+)
 
 COMBINE_STRATEGIES = ("query-only", "linear-comb", "spherical-comb")
 RERANK_STRATEGY = "cross-encoder"
 UPDATE_STRATEGY = "moving-average"
 PERSONAS = ("civil", "minecraft")
 SPORTS_PERSONAS = ("basketball", "football", "hockey", "soccer")
+SCIENCE_PERSONAS = ("biology", "chemistry", "physics")
 
 
 @dataclass(frozen=True)
@@ -112,7 +128,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     )
     parser.add_argument(
         "--topic",
-        choices=("zai", "sports"),
+        choices=("zai", "sports", "science"),
         default="zai",
         help="Dataset topic to evaluate",
     )
@@ -191,6 +207,36 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         "--soccer-questions-path",
         default=str(DEFAULT_SOCCER_QUESTIONS_PATH),
         help="Path to soccer persona priming questions",
+    )
+    parser.add_argument(
+        "--biology-questions-path",
+        default=str(DEFAULT_BIOLOGY_QUESTIONS_PATH),
+        help="Path to biology persona priming questions",
+    )
+    parser.add_argument(
+        "--chemistry-questions-path",
+        default=str(DEFAULT_CHEMISTRY_QUESTIONS_PATH),
+        help="Path to chemistry persona priming questions",
+    )
+    parser.add_argument(
+        "--physics-questions-path",
+        default=str(DEFAULT_PHYSICS_QUESTIONS_PATH),
+        help="Path to physics persona priming questions",
+    )
+    parser.add_argument(
+        "--biology-answers-path",
+        default=str(DEFAULT_BIOLOGY_ANSWERS_PATH),
+        help="Path to expected biology chunk numbers for neutral questions",
+    )
+    parser.add_argument(
+        "--chemistry-answers-path",
+        default=str(DEFAULT_CHEMISTRY_ANSWERS_PATH),
+        help="Path to expected chemistry chunk numbers for neutral questions",
+    )
+    parser.add_argument(
+        "--physics-answers-path",
+        default=str(DEFAULT_PHYSICS_ANSWERS_PATH),
+        help="Path to expected physics chunk numbers for neutral questions",
     )
     return parser.parse_args(argv)
 
@@ -436,6 +482,25 @@ def evaluate_grid(args: argparse.Namespace) -> list[EvaluationResult]:
             for persona in SPORTS_PERSONAS
         }
         personas = SPORTS_PERSONAS
+    elif args.topic == "science":
+        neutral_questions = load_questions(Path(args.both_questions_path))
+        persona_questions = {
+            "biology": load_questions(Path(args.biology_questions_path)),
+            "chemistry": load_questions(Path(args.chemistry_questions_path)),
+            "physics": load_questions(Path(args.physics_questions_path)),
+        }
+        expected_chunk_ids = {
+            "biology": load_expected_chunk_ids(
+                Path(args.biology_answers_path), "biology", len(neutral_questions)
+            ),
+            "chemistry": load_expected_chunk_ids(
+                Path(args.chemistry_answers_path), "chemistry", len(neutral_questions)
+            ),
+            "physics": load_expected_chunk_ids(
+                Path(args.physics_answers_path), "physics", len(neutral_questions)
+            ),
+        }
+        personas = SCIENCE_PERSONAS
     else:
         neutral_questions = load_questions(Path(args.both_questions_path))
         persona_questions = {
@@ -666,6 +731,12 @@ def main(argv: list[str] | None = None) -> int:
         if args.output_csv is None:
             args.output_csv = str(DEFAULT_SPORTS_OUTPUT_CSV_PATH)
         args.both_questions_path = str(DEFAULT_SPORTS_BOTH_QUESTIONS_PATH)
+    elif args.topic == "science":
+        if args.namespace is None:
+            args.namespace = DEFAULT_SCIENCE_NAMESPACE
+        if args.output_csv is None:
+            args.output_csv = str(DEFAULT_SCIENCE_OUTPUT_CSV_PATH)
+        args.both_questions_path = str(DEFAULT_SCIENCE_BOTH_QUESTIONS_PATH)
     else:
         if args.namespace is None:
             args.namespace = DEFAULT_NAMESPACE
