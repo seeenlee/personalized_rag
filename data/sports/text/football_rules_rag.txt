@@ -1,0 +1,50 @@
+[F1] A field goal is scored by kicking the ball over the crossbar and between the uprights of the opponent's goal.
+[F2] The goal line is the front boundary of the end zone; crossing it with the ball results in a touchdown.
+[F3] A hand ball is not a term; 'illegal touching' occurs if an ineligible receiver touches a forward pass.
+[F4] The draft consists of seven rounds where teams select players from the collegiate level based on reverse-record order.
+[F5] Substitutions are unlimited and can occur between any down, provided the players leave the field quickly.
+[F6] A block is the legal use of the body to obstruct an opponent, usually to protect the quarterback or runner.
+[F7] A personal foul (15-yard penalty) is called for dangerous acts like 'unnecessary roughness' or 'facemasking.'
+[F8] A standard period (quarter) of play lasts 15 minutes; there are four quarters in a regulation game.
+[F9] Teams appoint multiple captains (often 3-6) who meet at midfield for the coin toss and carry special patches.
+[F10] Out of bounds occurs when a player or the ball touches any part of the sideline or end line.
+[F11] A technical violation includes 'Illegal Formation' or 'Neutral Zone Infraction' before the snap.
+[F12] A hat trick is not used; the equivalent might be a 'three-touchdown game' for a single player.
+[F13] Playoff overtime allows both teams a possession to score unless the first team scores a touchdown immediately.
+[F14] The field dimensions are 120 yards long (including end zones) and 53.3 yards wide.
+[F15] The defensive zone is the 'secondary' or the 'red zone' (the area inside the 20-yard line).
+[F16] Scoring from a distance occurs through long field goals (50+ yards) or deep 'Hail Mary' passing plays.
+[F17] A turnover is a change of possession via an interception or a fumble recovery by the defense.
+[F18] Video review (Coach's Challenge) allows for the reversal of calls like 'catch/no-catch' or 'ball spot.'
+[F19] Unsportsmanlike conduct is a 'non-contact' foul, often for taunting or illegal demonstrations.
+[F20] A fast break is not a term; the 'No-Huddle' or 'Hurry-Up' offense is the closest tactical equivalent.
+[F21] Legal contact is extensive; blockers may use hands and arms within the frame of an opponent's body.
+[F22] A double-header historically refers to Saturday college games followed by Sunday pro games.
+[F23] A free shot (Free Kick) occurs after a safety, where the team must kick the ball to the opposition from their 20.
+[F24] A shutout is when a defense holds the opposing offense to zero points for the entire 60 minutes.
+[F25] A save is not a football term; a 'goal-line stand' is the term for a successful defensive stop at the net.
+[F26] This technical addendum covers the pressure specifications of game balls, the layout of heated sidelines for winter games, and the mechanics of the halo rule.
+[F27] This technical addendum covers the pressure specifications of game balls, the layout of heated sidelines for winter games, and the mechanics of the halo rule.
+[F28] This technical addendum covers the pressure specifications of game balls, the layout of heated sidelines for winter games, and the mechanics of the halo rule.
+[F29] This technical addendum covers the pressure specifications of game balls, the layout of heated sidelines for winter games, and the mechanics of the halo rule.
+[F30] This technical addendum covers the pressure specifications of game balls, the layout of heated sidelines for winter games, and the mechanics of the halo rule.
+[F31] This technical addendum covers the pressure specifications of game balls, the layout of heated sidelines for winter games, and the mechanics of the halo rule.
+[F32] This technical addendum covers the pressure specifications of game balls, the layout of heated sidelines for winter games, and the mechanics of the halo rule.
+[F33] This technical addendum covers the pressure specifications of game balls, the layout of heated sidelines for winter games, and the mechanics of the halo rule.
+[F34] This technical addendum covers the pressure specifications of game balls, the layout of heated sidelines for winter games, and the mechanics of the halo rule.
+[F35] This technical addendum covers the pressure specifications of game balls, the layout of heated sidelines for winter games, and the mechanics of the halo rule.
+[F36] This technical addendum covers the pressure specifications of game balls, the layout of heated sidelines for winter games, and the mechanics of the halo rule.
+[F37] This technical addendum covers the pressure specifications of game balls, the layout of heated sidelines for winter games, and the mechanics of the halo rule.
+[F38] This technical addendum covers the pressure specifications of game balls, the layout of heated sidelines for winter games, and the mechanics of the halo rule.
+[F39] This technical addendum covers the pressure specifications of game balls, the layout of heated sidelines for winter games, and the mechanics of the halo rule.
+[F40] This technical addendum covers the pressure specifications of game balls, the layout of heated sidelines for winter games, and the mechanics of the halo rule.
+[F41] This technical addendum covers the pressure specifications of game balls, the layout of heated sidelines for winter games, and the mechanics of the halo rule.
+[F42] This technical addendum covers the pressure specifications of game balls, the layout of heated sidelines for winter games, and the mechanics of the halo rule.
+[F43] This technical addendum covers the pressure specifications of game balls, the layout of heated sidelines for winter games, and the mechanics of the halo rule.
+[F44] This technical addendum covers the pressure specifications of game balls, the layout of heated sidelines for winter games, and the mechanics of the halo rule.
+[F45] This technical addendum covers the pressure specifications of game balls, the layout of heated sidelines for winter games, and the mechanics of the halo rule.
+[F46] This technical addendum covers the pressure specifications of game balls, the layout of heated sidelines for winter games, and the mechanics of the halo rule.
+[F47] This technical addendum covers the pressure specifications of game balls, the layout of heated sidelines for winter games, and the mechanics of the halo rule.
+[F48] This technical addendum covers the pressure specifications of game balls, the layout of heated sidelines for winter games, and the mechanics of the halo rule.
+[F49] This technical addendum covers the pressure specifications of game balls, the layout of heated sidelines for winter games, and the mechanics of the halo rule.
+[F50] This technical addendum covers the pressure specifications of game balls, the layout of heated sidelines for winter games, and the mechanics of the halo rule.
