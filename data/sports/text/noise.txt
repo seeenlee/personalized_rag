@@ -1,0 +1,100 @@
+In Baseball, a grand slam occurs when a batter hits a home run while all three bases are occupied by teammates.
+
+In Tennis, the term 'Love' is used to represent a score of zero, believed to originate from the French word 'l'oeuf' meaning egg.
+
+In Cricket, a 'century' is scored when a batsman reaches 100 runs in a single innings without being dismissed.
+
+In Rugby Union, a 'try' is worth five points and is scored by grounding the ball in the opponent's in-goal area.
+
+In Golf, an 'eagle' refers to completing a hole in two strokes under par, while a 'birdie' is one stroke under par.
+
+In Volleyball, a 'libero' is a defensive specialist who wears a different colored jersey and cannot serve or block.
+
+In Swimming, the four competitive strokes are freestyle, backstroke, breaststroke, and butterfly.
+
+In Formula 1 racing, the 'DRS' (Drag Reduction System) allows a trailing car to open a flap in the rear wing to increase top speed.
+
+In Boxing, a 'knockout' (KO) is declared when an opponent is unable to rise from the canvas within a ten-second count.
+
+In Gymnastics, the 'Vault' involves a sprint down a runway followed by a leap onto a springboard and a flight over the table.
+
+In Badminton, the 'shuttlecock' or 'birdie' is a high-drag projectile that can reach speeds of over 300 km/h.
+
+In Table Tennis, a 'let' occurs if the ball touches the net during a serve but otherwise lands legally in the opponent's court.
+
+In Mixed Martial Arts (MMA), a 'submission' occurs when a fighter signals their defeat by tapping the floor or their opponent.
+
+In Cycling, the 'Peloton' is the large main group of riders that stay close together to save energy by drafting.
+
+In Archery, the center of the target is known as the 'X-ring' or 'bullseye,' and hitting it grants the maximum 10 points.
+
+In Surfing, 'duck diving' is a technique used by surfers to push their board underwater and dive under oncoming waves.
+
+In Water Polo, players are not allowed to touch the bottom of the pool and must 'eggbeater' kick to stay afloat.
+
+In Fencing, the three weapons used are the Foil, the Epee, and the Sabre, each having its own specific target area.
+
+In Bowling, a 'strike' is achieved when all ten pins are knocked down on the first delivery of a frame.
+
+In Lacrosse, the 'crease' is the circular area around the goal that attacking players are generally not allowed to enter.
+
+In Figure Skating, a 'Lutz' is an edge jump where the skater enters from a back outside edge and taps the ice with the other toe.
+
+In Snowboarding, 'Goofy' stance refers to riding with the right foot forward, while 'Regular' is with the left foot forward.
+
+In Wrestling, a 'pin' or 'fall' occurs when a wrestler holds both of their opponent's shoulders to the mat simultaneously.
+
+In Athletics (Track and Field), a 'false start' occurs if an athlete moves from the starting blocks before the gun is fired.
+
+In Polo, players use long-handled mallets to hit a ball while riding horses, with four players on each team.
+
+In Squash, the ball is made of rubber and must be hit against the front wall; it can bounce only once on the floor.
+
+In Rowing, 'sculling' involves using two oars per person, while 'sweeping' involves using only one oar per person.
+
+In Equestrian Dressage, the horse and rider perform a series of predetermined movements to demonstrate balance and flexibility.
+
+In Triathlon, athletes compete in three consecutive stages: swimming, cycling, and long-distance running.
+
+In Ski Jumping, athletes are judged on their flight distance and their landing style, aiming for a 'Telemark' finish.
+
+In Billiards (Pool), the '8-ball' must be the final ball potted after a player has cleared their designated set of stripes or solids.
+
+In Darts, the highest scoring area is the 'triple 20,' which counts for 60 points, more than the bullseye's 50.
+
+In Sumo Wrestling, a 'Rikishi' loses the match if any part of his body other than the soles of his feet touches the ground.
+
+In Ultimate Frisbee, players score by catching a disc in the opposing team's end zone; running with the disc is not allowed.
+
+In Handball (Olympic), the goalkeeper is the only player allowed inside the 6-meter goal area.
+
+In Nascar, 'drafting' is the technique of following closely behind another car to reduce wind resistance and increase speed.
+
+In Field Hockey, players use sticks with a rounded side and a flat side, and the ball can only be hit with the flat side.
+
+In Karate, 'Kata' is a sequence of choreographed movements that simulate a fight against imaginary opponents.
+
+In Judo, the 'Ippon' is the highest score a fighter can achieve, awarded for a throw with speed, force, and control.
+
+In Sailing, 'tacking' is a maneuver where the bow of the boat is turned through the wind to change direction.
+
+In Australian Rules Football, a 'mark' is awarded when a player cleanly catches a kicked ball that has traveled over 15 meters.
+
+In Curling, 'sweepers' use brushes to melt the ice in front of the stone to influence its speed and trajectory.
+
+In Skateboarding, an 'Ollie' is a fundamental trick where the rider and board leap into the air without using hands.
+
+In Bobsleigh, the 'pilot' steers the sled while the 'brakeman' is responsible for stopping the sled after the finish line.
+
+In Netball, players are restricted to specific areas of the court depending on their assigned position (e.g., Goal Shoot).
+
+In Motocross, 'scrubbing' is a technique where riders stay low over jumps to maintain speed and minimize air time.
+
+In Canoeing, a 'C-1' involves a single paddler kneeling in the boat and using a single-bladed oar to propel themselves.
+
+In Taekwondo, points are awarded for kicks to the head and trunk, with spinning kicks receiving higher scores.
+
+In Snooker, the highest possible break under standard conditions is 147, achieved by potting all reds with blacks and then all colors.
+
+In Modern Pentathlon, athletes compete in five events: fencing, swimming, show jumping, pistol shooting, and running.
+
