@@ -61,6 +61,18 @@ DEFAULT_HOCKEY_QUESTIONS_PATH = (
 DEFAULT_SOCCER_QUESTIONS_PATH = (
     REPO_ROOT / "data" / "sports" / "questions" / "soccer_specific_queries.txt"
 )
+DEFAULT_BASKETBALL_ANSWERS_PATH = (
+    REPO_ROOT / "data" / "sports" / "answers" / "basketball_answers.txt"
+)
+DEFAULT_FOOTBALL_ANSWERS_PATH = (
+    REPO_ROOT / "data" / "sports" / "answers" / "football_answers.txt"
+)
+DEFAULT_HOCKEY_ANSWERS_PATH = (
+    REPO_ROOT / "data" / "sports" / "answers" / "hockey_answers.txt"
+)
+DEFAULT_SOCCER_ANSWERS_PATH = (
+    REPO_ROOT / "data" / "sports" / "answers" / "soccer_answers.txt"
+)
 DEFAULT_SPORTS_OUTPUT_CSV_PATH = REPO_ROOT / "data" / "sports" / "evaluation_results.csv"
 DEFAULT_SCIENCE_NAMESPACE = "science"
 DEFAULT_SCIENCE_BOTH_QUESTIONS_PATH = (
@@ -84,7 +96,12 @@ UPDATE_STRATEGY = "moving-average"
 PERSONAS = ("civil", "minecraft")
 SPORTS_PERSONAS = ("basketball", "football", "hockey", "soccer")
 SCIENCE_PERSONAS = ("biology", "chemistry", "physics")
-
+SPORTS_CHUNK_ID_PREFIXES = {
+    "basketball": "basketball_rules_full",
+    "football": "football_rules_full",
+    "hockey": "hockey_rules_full",
+    "soccer": "soccer_rules_full",
+}
 
 @dataclass(frozen=True)
 class RetrievalRun:
@@ -238,6 +255,26 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         default=str(DEFAULT_PHYSICS_ANSWERS_PATH),
         help="Path to expected physics chunk numbers for neutral questions",
     )
+    parser.add_argument(
+        "--basketball-answers-path",
+        default=str(DEFAULT_BASKETBALL_ANSWERS_PATH),
+        help="Path to expected basketball chunk numbers for neutral questions",
+    )
+    parser.add_argument(
+        "--football-answers-path",
+        default=str(DEFAULT_FOOTBALL_ANSWERS_PATH),
+        help="Path to expected football chunk numbers for neutral questions",
+    )
+    parser.add_argument(
+        "--hockey-answers-path",
+        default=str(DEFAULT_HOCKEY_ANSWERS_PATH),
+        help="Path to expected hockey chunk numbers for neutral questions",
+    )
+    parser.add_argument(
+        "--soccer-answers-path",
+        default=str(DEFAULT_SOCCER_ANSWERS_PATH),
+        help="Path to expected soccer chunk numbers for neutral questions",
+    )
     return parser.parse_args(argv)
 
 
@@ -258,7 +295,9 @@ def load_questions(path: Path) -> list[str]:
     return questions
 
 
-def load_expected_chunk_ids(path: Path, persona: str, expected_count: int) -> list[str]:
+def load_expected_chunk_ids(
+    path: Path, persona: str, expected_count: int, chunk_prefix: str | None = None
+) -> list[str]:
     """Load answer numbers and convert them to persona chunk IDs."""
     answers = load_questions(path)
     if len(answers) != expected_count:
@@ -274,7 +313,8 @@ def load_expected_chunk_ids(path: Path, persona: str, expected_count: int) -> li
                 f"Answer line {line_number} for {persona} must be a chunk number: "
                 f"{answer!r}"
             )
-        chunk_ids.append(f"{persona}-{int(answer)}")
+        prefix = chunk_prefix if chunk_prefix is not None else persona
+        chunk_ids.append(f"{prefix}-{int(answer)}")
 
     return chunk_ids
 
@@ -349,6 +389,7 @@ def retrieve_chunks(
 def score_retrieval(
     *,
     persona: str,
+    score_user_type: str,
     expected_chunk_id: str,
     chunk_ids: list[str],
 ) -> RetrievalRun:
@@ -356,7 +397,7 @@ def score_retrieval(
     return RetrievalRun(
         chunk_ids=chunk_ids,
         score=persona_rank_score(
-            user_type=persona,
+            user_type=score_user_type,
             expected_chunk=expected_chunk_id,
             retrieved_chunks=chunk_ids,
         ),
@@ -374,6 +415,7 @@ def evaluate_case(
     top_k: int,
     combine_strategy: str,
     persona: str,
+    score_user_type: str,
     question_number: int,
     neutral_question: str,
     expected_chunk_id: str,
@@ -398,7 +440,7 @@ def evaluate_case(
         update_strategy="none",
     )
     baseline = score_retrieval(
-        persona=persona,
+        score_user_type=score_user_type,
         expected_chunk_id=expected_chunk_id,
         chunk_ids=baseline_chunk_ids,
     )
@@ -447,7 +489,7 @@ def evaluate_case(
         update_strategy="none",
     )
     post_priming = score_retrieval(
-        persona=persona,
+        score_user_type=score_user_type,
         expected_chunk_id=expected_chunk_id,
         chunk_ids=post_chunk_ids,
     )
@@ -478,8 +520,30 @@ def evaluate_grid(args: argparse.Namespace) -> list[EvaluationResult]:
             "soccer": load_questions(Path(args.soccer_questions_path)),
         }
         expected_chunk_ids = {
-            persona: sequential_expected_chunk_ids(persona, len(neutral_questions))
-            for persona in SPORTS_PERSONAS
+            "basketball": load_expected_chunk_ids(
+                Path(args.basketball_answers_path),
+                "basketball",
+                len(neutral_questions),
+                chunk_prefix=SPORTS_CHUNK_ID_PREFIXES["basketball"],
+            ),
+            "football": load_expected_chunk_ids(
+                Path(args.football_answers_path),
+                "football",
+                len(neutral_questions),
+                chunk_prefix=SPORTS_CHUNK_ID_PREFIXES["football"],
+            ),
+            "hockey": load_expected_chunk_ids(
+                Path(args.hockey_answers_path),
+                "hockey",
+                len(neutral_questions),
+                chunk_prefix=SPORTS_CHUNK_ID_PREFIXES["hockey"],
+            ),
+            "soccer": load_expected_chunk_ids(
+                Path(args.soccer_answers_path),
+                "soccer",
+                len(neutral_questions),
+                chunk_prefix=SPORTS_CHUNK_ID_PREFIXES["soccer"],
+            ),
         }
         personas = SPORTS_PERSONAS
     elif args.topic == "science":
@@ -501,6 +565,9 @@ def evaluate_grid(args: argparse.Namespace) -> list[EvaluationResult]:
             ),
         }
         personas = SCIENCE_PERSONAS
+        score_user_types = {
+            persona: SPORTS_CHUNK_ID_PREFIXES[persona] for persona in SPORTS_PERSONAS
+        }
     else:
         neutral_questions = load_questions(Path(args.both_questions_path))
         persona_questions = {
@@ -516,6 +583,7 @@ def evaluate_grid(args: argparse.Namespace) -> list[EvaluationResult]:
             ),
         }
         personas = PERSONAS
+        score_user_types = {persona: persona for persona in PERSONAS}
 
     api_key = load_api_key()
     pc, index = connect_to_index(api_key, args.index_name)
@@ -533,6 +601,7 @@ def evaluate_grid(args: argparse.Namespace) -> list[EvaluationResult]:
                     top_k=args.top_k,
                     combine_strategy=combine_strategy,
                     persona=persona,
+                    score_user_type=score_user_types[persona],
                     question_number=question_number,
                     neutral_question=neutral_question,
                     expected_chunk_id=expected_chunk_ids[persona][
