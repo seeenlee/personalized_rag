@@ -425,6 +425,7 @@ def evaluate_case(
     """Evaluate one neutral question before and after persona priming."""
     username = f"eval-{persona}-q{question_number:02d}-{combine_strategy}"
     reset_user_vector(index, user_namespace, username)
+    rerank_strategy = "none" if baseline_only else RERANK_STRATEGY
 
     baseline_chunk_ids = retrieve_chunks(
         pc=pc,
@@ -436,7 +437,7 @@ def evaluate_case(
         embed_model=embed_model,
         top_k=top_k,
         combine_strategy=combine_strategy,
-        rerank_strategy=RERANK_STRATEGY,
+        rerank_strategy=rerank_strategy,
         update_strategy="none",
     )
     baseline = score_retrieval(
@@ -449,7 +450,7 @@ def evaluate_case(
     if baseline_only:
         return EvaluationResult(
             combine_strategy=combine_strategy,
-            rerank_strategy=RERANK_STRATEGY,
+            rerank_strategy=rerank_strategy,
             update_strategy=UPDATE_STRATEGY,
             persona=persona,
             question_number=question_number,
@@ -498,7 +499,7 @@ def evaluate_case(
 
     return EvaluationResult(
         combine_strategy=combine_strategy,
-        rerank_strategy=RERANK_STRATEGY,
+        rerank_strategy=rerank_strategy,
         update_strategy=UPDATE_STRATEGY,
         persona=persona,
         question_number=question_number,
