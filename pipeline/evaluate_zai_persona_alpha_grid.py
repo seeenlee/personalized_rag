@@ -75,6 +75,37 @@ DEFAULT_SOCCER_ANSWERS_PATH = (
     REPO_ROOT / "data" / "sports" / "answers" / "soccer_answers.txt"
 )
 DEFAULT_SPORTS_OUTPUT_CSV_PATH = REPO_ROOT / "data" / "sports" / "evaluation_results.csv"
+DEFAULT_SPORTS2_NAMESPACE = "sports2"
+DEFAULT_SPORTS2_BOTH_QUESTIONS_PATH = (
+    REPO_ROOT / "data" / "sports2" / "questions" / "all.txt"
+)
+DEFAULT_SPORTS2_BASKETBALL_QUESTIONS_PATH = (
+    REPO_ROOT / "data" / "sports2" / "questions" / "basketball.txt"
+)
+DEFAULT_SPORTS2_FOOTBALL_QUESTIONS_PATH = (
+    REPO_ROOT / "data" / "sports2" / "questions" / "football.txt"
+)
+DEFAULT_SPORTS2_HOCKEY_QUESTIONS_PATH = (
+    REPO_ROOT / "data" / "sports2" / "questions" / "hockey.txt"
+)
+DEFAULT_SPORTS2_SOCCER_QUESTIONS_PATH = (
+    REPO_ROOT / "data" / "sports2" / "questions" / "soccer.txt"
+)
+DEFAULT_SPORTS2_BASKETBALL_ANSWERS_PATH = (
+    REPO_ROOT / "data" / "sports2" / "answers" / "basketball.txt"
+)
+DEFAULT_SPORTS2_FOOTBALL_ANSWERS_PATH = (
+    REPO_ROOT / "data" / "sports2" / "answers" / "football.txt"
+)
+DEFAULT_SPORTS2_HOCKEY_ANSWERS_PATH = (
+    REPO_ROOT / "data" / "sports2" / "answers" / "hockey.txt"
+)
+DEFAULT_SPORTS2_SOCCER_ANSWERS_PATH = (
+    REPO_ROOT / "data" / "sports2" / "answers" / "soccer.txt"
+)
+DEFAULT_SPORTS2_OUTPUT_CSV_PATH = (
+    REPO_ROOT / "data" / "sports2" / "evaluation_results.csv"
+)
 DEFAULT_SCIENCE_NAMESPACE = "science"
 DEFAULT_SCIENCE_BOTH_QUESTIONS_PATH = (
     REPO_ROOT / "data" / "science" / "questions" / "both.txt"
@@ -102,6 +133,12 @@ SPORTS_CHUNK_ID_PREFIXES = {
     "football": "football_rules_full",
     "hockey": "hockey_rules_full",
     "soccer": "soccer_rules_full",
+}
+SPORTS2_CHUNK_ID_PREFIXES = {
+    "basketball": "basketball",
+    "football": "football",
+    "hockey": "hockey",
+    "soccer": "soccer",
 }
 
 @dataclass(frozen=True)
@@ -146,7 +183,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     )
     parser.add_argument(
         "--topic",
-        choices=("zai", "sports", "science"),
+        choices=("zai", "sports", "sports2", "science"),
         default="zai",
         help="Dataset topic to evaluate",
     )
@@ -170,6 +207,11 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         type=int,
         default=DEFAULT_TOP_K,
         help="Number of chunks to retrieve per ask",
+    )
+    parser.add_argument(
+        "--no-rerank",
+        action="store_true",
+        help="Disable cross-encoder reranking and keep vector search order",
     )
     parser.add_argument(
         "--embed-model",
@@ -428,12 +470,13 @@ def evaluate_case(
     neutral_question: str,
     expected_chunk_id: str,
     priming_questions: list[str],
+    configured_rerank_strategy: str,
     baseline_only: bool,
 ) -> EvaluationResult:
     """Evaluate one neutral question before and after persona priming."""
     username = f"alpha-eval-{persona}-q{question_number:02d}-{combine_strategy}"
     reset_user_vector(index, user_namespace, username)
-    rerank_strategy = "none" if baseline_only else RERANK_STRATEGY
+    rerank_strategy = "none" if baseline_only else configured_rerank_strategy
 
     baseline_chunk_ids = retrieve_chunks(
         pc=pc,
@@ -482,7 +525,7 @@ def evaluate_case(
             embed_model=embed_model,
             top_k=top_k,
             combine_strategy=combine_strategy,
-            rerank_strategy=RERANK_STRATEGY,
+            rerank_strategy=rerank_strategy,
             update_strategy=UPDATE_STRATEGY,
             alpha=alpha,
         )
@@ -502,7 +545,7 @@ def evaluate_case(
         embed_model=embed_model,
         top_k=top_k,
         combine_strategy=combine_strategy,
-        rerank_strategy=RERANK_STRATEGY,
+        rerank_strategy=rerank_strategy,
         update_strategy="none",
     )
     post_priming = score_retrieval(
@@ -567,6 +610,44 @@ def evaluate_grid(args: argparse.Namespace) -> list[EvaluationResult]:
         score_user_types = {
             persona: SPORTS_CHUNK_ID_PREFIXES[persona] for persona in SPORTS_PERSONAS
         }
+    elif args.topic == "sports2":
+        neutral_questions = load_questions(Path(args.both_questions_path))
+        persona_questions = {
+            "basketball": load_questions(DEFAULT_SPORTS2_BASKETBALL_QUESTIONS_PATH),
+            "football": load_questions(DEFAULT_SPORTS2_FOOTBALL_QUESTIONS_PATH),
+            "hockey": load_questions(DEFAULT_SPORTS2_HOCKEY_QUESTIONS_PATH),
+            "soccer": load_questions(DEFAULT_SPORTS2_SOCCER_QUESTIONS_PATH),
+        }
+        expected_chunk_ids = {
+            "basketball": load_expected_chunk_ids(
+                DEFAULT_SPORTS2_BASKETBALL_ANSWERS_PATH,
+                "basketball",
+                len(neutral_questions),
+                chunk_prefix=SPORTS2_CHUNK_ID_PREFIXES["basketball"],
+            ),
+            "football": load_expected_chunk_ids(
+                DEFAULT_SPORTS2_FOOTBALL_ANSWERS_PATH,
+                "football",
+                len(neutral_questions),
+                chunk_prefix=SPORTS2_CHUNK_ID_PREFIXES["football"],
+            ),
+            "hockey": load_expected_chunk_ids(
+                DEFAULT_SPORTS2_HOCKEY_ANSWERS_PATH,
+                "hockey",
+                len(neutral_questions),
+                chunk_prefix=SPORTS2_CHUNK_ID_PREFIXES["hockey"],
+            ),
+            "soccer": load_expected_chunk_ids(
+                DEFAULT_SPORTS2_SOCCER_ANSWERS_PATH,
+                "soccer",
+                len(neutral_questions),
+                chunk_prefix=SPORTS2_CHUNK_ID_PREFIXES["soccer"],
+            ),
+        }
+        personas = SPORTS_PERSONAS
+        score_user_types = {
+            persona: SPORTS2_CHUNK_ID_PREFIXES[persona] for persona in SPORTS_PERSONAS
+        }
     elif args.topic == "science":
         neutral_questions = load_questions(Path(args.both_questions_path))
         persona_questions = {
@@ -607,6 +688,7 @@ def evaluate_grid(args: argparse.Namespace) -> list[EvaluationResult]:
     api_key = load_api_key()
     pc, index = connect_to_index(api_key, args.index_name)
     results: list[EvaluationResult] = []
+    configured_rerank_strategy = "none" if args.no_rerank else RERANK_STRATEGY
 
     for combine_strategy in COMBINE_STRATEGIES:
         for persona in personas:
@@ -627,6 +709,7 @@ def evaluate_grid(args: argparse.Namespace) -> list[EvaluationResult]:
                         question_number - 1
                     ],
                     priming_questions=persona_questions[persona],
+                    configured_rerank_strategy=configured_rerank_strategy,
                     baseline_only=combine_strategy == "query-only",
                 )
                 results.append(result)
@@ -819,6 +902,12 @@ def main(argv: list[str] | None = None) -> int:
         if args.output_csv is None:
             args.output_csv = str(DEFAULT_SPORTS_OUTPUT_CSV_PATH)
         args.both_questions_path = str(DEFAULT_SPORTS_BOTH_QUESTIONS_PATH)
+    elif args.topic == "sports2":
+        if args.namespace is None:
+            args.namespace = DEFAULT_SPORTS2_NAMESPACE
+        if args.output_csv is None:
+            args.output_csv = str(DEFAULT_SPORTS2_OUTPUT_CSV_PATH)
+        args.both_questions_path = str(DEFAULT_SPORTS2_BOTH_QUESTIONS_PATH)
     elif args.topic == "science":
         if args.namespace is None:
             args.namespace = DEFAULT_SCIENCE_NAMESPACE
