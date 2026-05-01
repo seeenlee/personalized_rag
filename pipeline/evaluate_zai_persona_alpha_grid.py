@@ -431,7 +431,7 @@ def evaluate_case(
     baseline_only: bool,
 ) -> EvaluationResult:
     """Evaluate one neutral question before and after persona priming."""
-    username = f"eval-{persona}-q{question_number:02d}-{combine_strategy}"
+    username = f"alpha-eval-{persona}-q{question_number:02d}-{combine_strategy}"
     reset_user_vector(index, user_namespace, username)
     rerank_strategy = "none" if baseline_only else RERANK_STRATEGY
 
