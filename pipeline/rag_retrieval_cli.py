@@ -154,6 +154,18 @@ def _as_sequence(value: Any) -> list[Any]:
     return []
 
 
+def is_missing_namespace_error(exc: Exception) -> bool:
+    """Return whether a Pinecone exception is for a namespace that is not created yet."""
+    message_parts = [
+        str(exc),
+        str(getattr(exc, "body", "")),
+        str(getattr(exc, "reason", "")),
+    ]
+    return getattr(exc, "status", None) == 404 and any(
+        "Namespace not found" in part for part in message_parts
+    )
+
+
 def _coerce_float_vector(value: Any) -> np.ndarray | None:
     """Convert a sequence of numeric values into a NumPy vector."""
     if value is None or isinstance(value, (str, bytes)):
@@ -193,7 +205,12 @@ def _extract_vector_from_record(record: Any) -> np.ndarray | None:
 
 def fetch_user_vector(index: Any, namespace: str, username: str) -> np.ndarray | None:
     """Fetch a user vector by username from Pinecone."""
-    result = index.fetch(ids=[username], namespace=namespace)
+    try:
+        result = index.fetch(ids=[username], namespace=namespace)
+    except Exception as exc:
+        if is_missing_namespace_error(exc):
+            return None
+        raise
     vectors = _safe_get(result, "vectors")
     if vectors is None:
         return None

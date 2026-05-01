@@ -12,7 +12,7 @@ from typing import Any
 
 import numpy as np
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
@@ -356,6 +356,7 @@ def retrieve_chunks(
     combine_strategy: str,
     rerank_strategy: str,
     update_strategy: str,
+    alpha: float | None = None,
 ) -> list[str]:
     """Run one non-interactive retrieval through the RAG pipeline helpers."""
     query_vector = embed_query(pc, embed_model, query)
@@ -367,6 +368,7 @@ def retrieve_chunks(
         user_vector=user_vector,
         query_vector=query_vector,
         strategy=combine_strategy,
+        alpha=alpha,
     )
     search_result = search_chunks(
         index=index,
@@ -468,6 +470,7 @@ def evaluate_case(
             post_priming=None,
         )
 
+    alpha = .99 if combine_strategy == "linear-comb" or combine_strategy == "spherical-comb" else None
     for priming_question in priming_questions:
         retrieve_chunks(
             pc=pc,
@@ -481,7 +484,13 @@ def evaluate_case(
             combine_strategy=combine_strategy,
             rerank_strategy=RERANK_STRATEGY,
             update_strategy=UPDATE_STRATEGY,
+            alpha=alpha,
         )
+        if alpha is not None:
+            if combine_strategy == "linear-comb" and alpha > .7:
+                alpha -= .02
+            elif combine_strategy == "spherical-comb" and alpha > .5:
+                alpha -= .05
 
     post_chunk_ids = retrieve_chunks(
         pc=pc,
